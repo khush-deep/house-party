@@ -16,7 +16,7 @@ class Room(models.Model):
     votes_to_skip = models.IntegerField()
     current_votes = models.IntegerField()
     current_song = models.ForeignKey(Song, on_delete=models.PROTECT, null=True)
-    song_start_time = models.TimeField(auto_now_add=True)
+    song_start_time = models.DateTimeField()
 
     def __str__(self) -> str:
         return self.code
