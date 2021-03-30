@@ -7,4 +7,5 @@ urlpatterns = [
     path("get-room-info/<int:id>", views.get_room_info, name="get-room-info"),
     path("update-room/<int:id>", views.update_room, name="update-room"),
     path("create-room", views.create_room, name="create-room"),
+    path("upload-song/local", views.upload_local_song, name="upload-local-song"),
 ]
