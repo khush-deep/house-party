@@ -40,11 +40,6 @@ def create_bucket(COS_BUCKET_NAME):
         return False, f"Unable to create bucket: {e}"
 
 def upload_to_bucket(filename, file_obj):
-    buckets = get_buckets()
-    if COS_BUCKET_NAME not in buckets:
-        success, info = create_bucket(COS_BUCKET_NAME)
-        if not success:
-            return False, info
     try:
         cos.Object(COS_BUCKET_NAME, filename).upload_fileobj(file_obj)
     except (ClientError, Exception) as error:
@@ -55,3 +50,14 @@ def get_item_url(filename):
     url_encoded_filename = urllib.parse.quote(filename)
     url = f"{COS_ENDPOINT}/{COS_BUCKET_NAME}/{url_encoded_filename}"
     return url
+
+def initialize_bucket(COS_BUCKET_NAME):
+    buckets = get_buckets()
+    if COS_BUCKET_NAME not in buckets:
+        success, info = create_bucket(COS_BUCKET_NAME)
+        if not success:
+            logging.error(info)
+            return
+    print("Bucket initialized!")
+
+initialize_bucket(COS_BUCKET_NAME)

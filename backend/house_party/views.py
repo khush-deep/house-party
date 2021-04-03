@@ -105,12 +105,15 @@ def upload_local_song(request):
         return JsonResponse(res, status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
     cover_file = files.get("cover")
-    cover_filename = data["title"] + " - " + data.get("artist", "") + ".jpg"
-    success, message = upload_to_bucket(cover_filename, cover_file)
-    if not success:
-        logging.error(message)
-        res = {"error": "Error while uploading cover art"}
-        return JsonResponse(res, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    if cover_file:
+        cover_filename = data["title"] + " - " + data.get("artist", "") + ".jpg"
+        success, message = upload_to_bucket(cover_filename, cover_file)
+        if not success:
+            logging.error(message)
+            res = {"error": "Error while uploading cover art"}
+            return JsonResponse(res, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    else:
+        cover_filename = "default-cover.jpg"
 
     song = Song(
         title=data["title"],
