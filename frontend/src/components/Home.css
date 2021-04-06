@@ -1,0 +1,15 @@
+.home {
+    height: 100%;
+    width: 100%;
+    /* backgroundColor: blueviolet; */
+    /* backgroundColor: #762be2; */
+    align-items: center;
+    display:inline-flex;
+    flex-direction: column;
+    justify-content:center
+}
+Button:hover {
+    transform:scale(1.15,1.15);
+    /* -webkit-transform:scale(1.3,1.3);
+    -moz-transform:scale(1.3,1.3); */
+}
