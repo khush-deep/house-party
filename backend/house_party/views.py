@@ -7,7 +7,7 @@ from http import HTTPStatus
 
 from django.db.models import F
 from django.http.response import JsonResponse
-from django.views.decorators.csrf import ensure_csrf_cookie
+# from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import Playlist, Room, Song
 from .utils.cloud_storage_helper import get_item_url, upload_to_bucket
@@ -35,7 +35,7 @@ def get_room_info(request, id):
     return JsonResponse(res)
 
 
-@ensure_csrf_cookie
+# @ensure_csrf_cookie
 def create_room(request):
     data = json.loads(request.body)
     room_code = data.get("code")
@@ -76,7 +76,7 @@ def create_room(request):
     return JsonResponse(res, status=HTTPStatus.CREATED)
 
 
-@ensure_csrf_cookie
+# @ensure_csrf_cookie
 def update_room(request, id):
     data = json.loads(request.body)
     added_votes = 1 if data.get("increase_votes") else 0
