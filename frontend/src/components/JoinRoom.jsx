@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "reactstrap";
+// import { Button } from "reactstrap";
 import "./JoinRoom.css";
 
 function roomsListItem(props) {
@@ -10,7 +10,7 @@ function roomsListItem(props) {
             <div key={props.id} className="room_item">
                 <div className="room_item__info">
                     <span style={{fontSize: "23px"}}>
-                        {props.name ? props.name : props.code}
+                        {props.name}
                     </span>
                 </div>
             </div>
@@ -25,18 +25,16 @@ function JoinRoom() {
         fetch("/api/get-rooms")
             .then(res => res.json())
             .then(data => {
-                console.log(data);
                 setRoomsData(data);
             });
     }, []);
 
     return (
-        <div className="join"><br/>
+        <div className="join_room"><br/>
             <div style={{fontSize: "34px"}}>
                 {roomsData === [] ? "No rooms to show :(" : "Rooms available"}
             </div><br/>
             {roomsData === null ? "Loading..." : roomsData.map(room => {
-                room["key"] = room.id;
                 return roomsListItem(room);
             })}
         </div>
