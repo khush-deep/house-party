@@ -1,0 +1,76 @@
+.room {
+    height: 100%;
+    width: 100%;
+    align-items: center;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.room_available {
+    align-items: center;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.cover img {
+    width: 250px;
+}
+.song_detail {
+    line-height: 2.5;
+}
+.playback_bar {
+    display: inline-flex;
+    justify-content: center;
+    width: 250px;
+}
+.skip > Button {
+    padding: 4px 10px;
+    font-size: 14px;
+}
+.skip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+  }
+.skip .tooptip {
+    visibility: hidden;
+    width: 120px;
+    background-color: rgba(0,0,0,.3);
+    font-size: 13px;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+    top: -2px;
+    left: 110%;
+}
+.skip:hover .tooptip {
+    visibility: visible;
+  }
+.progress_bar {
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+}
+.progress_time {
+    float: left;
+    font-size: 11px;
+}
+.playback_duration {
+    float: right;
+    font-size: 11px;
+}
+.back_upload {
+    width: 250px;
+}
+.back {
+    float: left;
+}
+.upload {
+    float: right;
+}

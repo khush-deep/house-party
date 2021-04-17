@@ -1,0 +1,6 @@
+.footer {
+    float: right;
+}
+.footer > Button {
+    margin-left: 10px;
+}

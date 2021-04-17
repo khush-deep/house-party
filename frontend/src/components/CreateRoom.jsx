@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { Button, Input } from "reactstrap";
+import { useHistory } from "react-router-dom";
+import { BiArrowBack } from "react-icons/bi";
+import { RiSave3Fill } from "react-icons/ri";
+
 import "./CreateRoom.css";
 
 const generateRoomCode = () => {
@@ -13,6 +17,7 @@ const generateRoomCode = () => {
 }
 
 function CreateRoom() {
+  let history = useHistory();
   const [roomCode, setRoomCode] = useState(generateRoomCode());
   const [roomName, setRoomName] = useState("");
   const [votesToSkip, setVotes] = useState(1);
@@ -23,10 +28,10 @@ function CreateRoom() {
       return;
     }
     let data = {
-      "code": roomCode,
+      "code": roomCode.trim(),
       "votes_to_skip": votesToSkip
     }
-    if (roomName.trim() !== "") data["name"] = roomName;
+    if (roomName.trim() !== "") data["name"] = roomName.trim();
 
     fetch("/api/create-room", {
       method: "POST",
@@ -74,14 +79,18 @@ function CreateRoom() {
           type="number"
           onChange={e => setVotes(e.target.value)}
         />
-      </div><br />
-      <div>
+      </div>
+      <div className="submit">
         <Button
           color="success"
           onClick={createRoomHandler}
         >
           Submit
+          <RiSave3Fill style={{marginLeft:"3px"}} />
         </Button>
+      </div>
+      <div>
+        <Button className="back" onClick={() => history.goBack()} color="danger"> <BiArrowBack /> Back</Button>
       </div>
     </div>
   );

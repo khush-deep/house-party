@@ -1,22 +1,17 @@
 .create_room {
     height: 100%;
     width: 100%;
-    /* background-color: #762be2; */
     align-items: center;
     display: inline-flex;
     flex-direction: column;
     justify-content: center;
 }
 .create_room_element {
-    /* background-color: #007bff; */
-    /* background-color: rgba(0,0,255,.5); */
-    /* background-image: radial-gradient( rgba(255,0,255,1), rgba(0,0,255,1) ); */
-    /* background-image: linear-gradient(to left, rgba(0,0,255,.5) , rgba(255,0,255,1)); */
-    /* padding: 5px;
-    border-radius: 5px;
-    color: white;
-    text-decoration: none;
-    text-align: center; */
     width: 250px;
     margin: 6px;
+}
+
+.submit {
+    margin-top: 10px;
+    margin-bottom: 9px;
 }

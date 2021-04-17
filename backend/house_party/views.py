@@ -7,7 +7,6 @@ from http import HTTPStatus
 
 from django.db.models import F
 from django.http.response import JsonResponse
-# from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import Playlist, Room, Song
 from .utils.cloud_storage_helper import get_item_url, upload_to_bucket
@@ -17,25 +16,28 @@ from .utils.serializers import custom_serializer
 
 
 def get_rooms(request):
-    rooms = custom_serializer(Room.objects.all(), fields=("name", "code"))
+    rooms = custom_serializer(Room.objects.all(), fields=("name", "code"), primary_key="code")
     return JsonResponse(rooms, safe=False)
 
 
-def get_room_info(request, id):
+def get_room_info(request, code):
     playlists = Playlist.objects.all()
-    playlist = [song for song in playlists if song.room.id == id]
+    playlist = [song for song in playlists if song.room.code == code]
     if playlist:
-        room = playlist[0].room
+        room = [playlist[0].room]
     else:
-        room = Room.objects.get(id=id)
+        room = Room.objects.filter(code=code)
+    if not room:
+        res = {"error": "Room not found!"}
+        return JsonResponse(res, status=HTTPStatus.NOT_FOUND)
+
     for i in range(len(playlist)):
         playlist[i] = playlist[i].song
-    res = custom_serializer([room])[0]
+    res = custom_serializer(room, primary_key="code")[0]
     res["playlist"] = custom_serializer(playlist)
     return JsonResponse(res)
 
 
-# @ensure_csrf_cookie
 def create_room(request):
     data = json.loads(request.body)
     room_code = data.get("code")
@@ -71,12 +73,11 @@ def create_room(request):
         ))
     Playlist.objects.bulk_create(playlist)
 
-    res = custom_serializer([room])[0]
+    res = custom_serializer([room], primary_key="code")[0]
     res["playlist"] = custom_serializer(songs)
     return JsonResponse(res, status=HTTPStatus.CREATED)
 
 
-# @ensure_csrf_cookie
 def update_room(request, id):
     data = json.loads(request.body)
     added_votes = 1 if data.get("increase_votes") else 0

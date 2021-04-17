@@ -12,7 +12,7 @@ class Song(models.Model):
 
 class Room(models.Model):
     name = models.CharField(max_length=100)
-    code = models.CharField(max_length=10)
+    code = models.CharField(max_length=10, primary_key=True)
     votes_to_skip = models.IntegerField()
     current_votes = models.IntegerField()
     current_song = models.ForeignKey(Song, on_delete=models.PROTECT, null=True)
