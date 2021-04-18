@@ -34,9 +34,9 @@
     display: inline-block;
     border-bottom: 1px dotted black;
   }
-.skip .tooptip {
+.skip .tooltip {
     visibility: hidden;
-    width: 120px;
+    width: 150px;
     background-color: rgba(0,0,0,.3);
     font-size: 13px;
     text-align: center;
@@ -49,7 +49,7 @@
     top: -2px;
     left: 110%;
 }
-.skip:hover .tooptip {
+.skip:hover .tooltip {
     visibility: visible;
   }
 .progress_bar {

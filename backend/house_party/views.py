@@ -78,7 +78,7 @@ def create_room(request):
     return JsonResponse(res, status=HTTPStatus.CREATED)
 
 
-def update_room(request, id):
+def update_room(request, code):
     data = json.loads(request.body)
     added_votes = 1 if data.get("increase_votes") else 0
     fields = {
@@ -87,8 +87,8 @@ def update_room(request, id):
     if data.get("change_song"):
         fields["current_song"] = data["current_song"]
         fields["song_start_time"] = datetime.now()
-    Room.objects.filter(id=id).update(**fields)
-    return get_room_info(request, id)
+    Room.objects.filter(code=code).update(**fields)
+    return get_room_info(request, code)
 
 
 def upload_local_song(request):

@@ -11,7 +11,7 @@ function UploadLocalSong(props) {
   let [coverFilename, setCoverFilename] = useState("");
   let [songFile, setSongFile] = useState(null);
   let [coverFile, setCoverFile] = useState(null);
-  let [uploading, setUploadState] = useState(true);
+  let [uploading, setUploadState] = useState(false);
   const hiddenSongInput = useRef(null);
   const hiddenCoverInput = useRef(null);
 
