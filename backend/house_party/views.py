@@ -87,6 +87,7 @@ def update_room(request, code):
     if data.get("change_song"):
         fields["current_song"] = data["current_song"]
         fields["song_start_time"] = datetime.now()
+        fields["current_votes"] = 0
     Room.objects.filter(code=code).update(**fields)
     return get_room_info(request, code)
 

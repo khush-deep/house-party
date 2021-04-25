@@ -8,16 +8,16 @@ import "./JoinRoom.css";
 
 function roomsListItem(room) {
   return (
-    <>
+    <div key={room.code}>
       <Link to={{ pathname: "/room/" + room.code, name: room.name }} style={{ textDecoration: "none" }}>
-        <div key={room.code} className="room_item">
+        <div className="room_item">
           <div className="room_item__info">
             <span style={{ fontSize: "23px" }}>
               {room.name}
             </span>
           </div>
         </div>
-      </Link><br /></>
+      </Link><br /></div>
   )
 }
 

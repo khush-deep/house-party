@@ -8,7 +8,6 @@ import UploadLocalSong from "./UploadLocalSong";
 import "./Room.css";
 
 const defaultCoverUrl = "https://s3.jp-tok.cloud-object-storage.appdomain.cloud/library-bucket/default-cover.jpg";
-const song_url = "https://s3.jp-tok.cloud-object-storage.appdomain.cloud/library-bucket/Something%20just%20like%20this%20-%20Chainsmokers%20ft.%20Coldplay.mp3";
 
 function Room(props) {
   let history = useHistory();
@@ -20,47 +19,96 @@ function Room(props) {
   let [coverUrl, setCoverUrl] = useState(defaultCoverUrl);
   let [songUrl, setSongUrl] = useState("");
   let [songName, setSongName] = useState("No song to play! Add songs to library");
+  let [playlist, setPlaylist] = useState([]);
+  let [songId, setSongId] = useState(null);
   let [startTime, setStartTime] = useState("");
   let [elapsedTime, setElapsedTime] = useState(0);
   let [songDuration, setSongDuration] = useState(0);
   let [nextSongName, setNextSong] = useState("next-song");
   let [voteCasted, setVoteCasted] = useState(false);
+  let [songEnded, setSongEnded] = useState(false);
   const hiddenAudioElement = useRef(null);
 
   function formattedTime(timeInSec) {
     return new Date(timeInSec * 1000).toISOString().substr(15, 4);
   }
 
-  function getSongFromPlaylist(currentSongId, playlist) {
+  function getSongFromPlaylist() {
     for (const song of playlist) {
-      if (song.id === currentSongId) {
+      if (song.id === songId) {
         return song;
       }
     }
   }
-  function getNextSongFromPlaylist(currentSongId, playlist) {
+  function getNextSongFromPlaylist() {
     const n = playlist.length;
     for (let i = 0; i < n; i++) {
-      if (playlist[i].id === currentSongId) {
+      if (playlist[i].id === songId) {
         return playlist[(i + 1) % n];
       }
     }
   }
 
+  const handleSongEnd = event => {
+    songEnded = true;
+    try {
+      hiddenAudioElement.current.pause().catch(() => console.log());
+    } catch (error) {
+    }
+  };
+
   function toggle() {
     setModal(!modal);
   }
+
+  function updateRoom() {
+    const tempCurrentTime = new Date() - new Date(startTime);
+    if (Math.abs(tempCurrentTime - hiddenAudioElement.current.currentTime*1000) > 500) {
+      if (tempCurrentTime/1000 < hiddenAudioElement.current.duration)
+        hiddenAudioElement.current.currentTime = tempCurrentTime / 1000;
+    }
+    setElapsedTime(hiddenAudioElement.current.currentTime || 0);
+    setSongDuration(hiddenAudioElement.current.duration || 0);
+    if (currentVotes >= votesToSkip || Math.abs(tempCurrentTime/1000 - hiddenAudioElement.current.duration) < 2) {
+      let data = {
+        "change_song": true,
+        "current_song": getNextSongFromPlaylist().id
+      }
+      console.log(data);
+      fetch("/api/update-room/" + code, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    }
+    else if (tempCurrentTime/1000 > hiddenAudioElement.current.duration) {
+      let data = {
+        "change_song": true,
+        "current_song": getSongFromPlaylist().id
+      }
+      fetch("/api/update-room/" + code, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    }
+  }
+
   function getRoomInfo() {
     fetch("/api/get-room-info/" + code)
       .then(res => {
         if (res.status === 200) {
           res.json()
             .then(res => {
-              console.log("Polled");
-              setCurrentVotes(res.current_votes);
-              setStartTime(res.song_start_time);
-              let song = getSongFromPlaylist(res.current_song, res.playlist);
-              let nextSong = getNextSongFromPlaylist(res.current_song, res.playlist);
+              setCurrentVotes(parseInt(res.current_votes));
+              currentVotes = parseInt(res.current_votes);
+              if (startTime !== res.song_start_time) {
+                setVoteCasted(false);
+                songEnded = false;
+              }
+              startTime = res.song_start_time;
+              songId = parseInt(res.current_song);
+              playlist = res.playlist;
+              let song = getSongFromPlaylist();
+              let nextSong = getNextSongFromPlaylist();
               if (!!song) {
                 setSongUrl(song.song_url);
                 setCoverUrl(song.cover_art_url);
@@ -68,17 +116,17 @@ function Room(props) {
                 setNextSong(nextSong.title + " - " + nextSong.artist);
               }
             });
-          hiddenAudioElement.current.play();
+          if (!songEnded) {
+            try {
+              hiddenAudioElement.current.play().catch(() => console.log());
+            } catch (error) {
+            }
+          }
           hiddenAudioElement.current.muted = false;
         }
       });
   }
 
-  function updateRoom() {
-    console.log("updated");
-    setElapsedTime(hiddenAudioElement.current.currentTime || 0);
-    setSongDuration(hiddenAudioElement.current.duration || 0);
-  }
 
   useEffect(() => {
     let [intervalId1, intervalId2] = [0, 0];
@@ -92,11 +140,15 @@ function Room(props) {
           res.json()
             .then(res => {
               setRoomName(res.name);
-              setVotesToSkip(res.votes_to_skip);
-              setCurrentVotes(res.current_votes);
-              setStartTime(res.song_start_time);
-              let song = getSongFromPlaylist(res.current_song, res.playlist);
-              let nextSong = getNextSongFromPlaylist(res.current_song, res.playlist);
+              setVotesToSkip(parseInt(res.votes_to_skip));
+              votesToSkip = parseInt(res.votes_to_skip);
+              setCurrentVotes(parseInt(res.current_votes));
+              currentVotes = parseInt(res.current_votes);
+              startTime = res.song_start_time;
+              songId = parseInt(res.current_song);
+              playlist = res.playlist;
+              let song = getSongFromPlaylist();
+              let nextSong = getNextSongFromPlaylist();
               if (!!song) {
                 setSongUrl(song.song_url);
                 setCoverUrl(song.cover_art_url);
@@ -105,9 +157,9 @@ function Room(props) {
               }
 
             });
-          hiddenAudioElement.current.play();
+          hiddenAudioElement.current.play().catch(() => console.log());
           hiddenAudioElement.current.muted = false;
-          intervalId1 = setInterval(getRoomInfo, 3000);
+          intervalId1 = setInterval(getRoomInfo, 1500);
           intervalId2 = setInterval(updateRoom, 1000);
         }
       });
@@ -140,7 +192,7 @@ function Room(props) {
           <div className="song_detail">
             {songName}
           </div>
-          <audio ref={hiddenAudioElement} src={songUrl}></audio>
+          <audio ref={hiddenAudioElement} onEnded={handleSongEnd} src={songUrl}></audio>
           <div className="playback_bar">
             <div className="progress_bar">
               <div className="playback_time">
