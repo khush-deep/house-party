@@ -36,12 +36,16 @@ function UploadLocalSong(props) {
     if (songFile === null) {
       alert("Choose song file first"); return;
     }
+
     let fd = new FormData();
+    fd.append("code", props.code);
     fd.append("title", songTitle);
     fd.append("artist", songArtist);
     fd.append("song", songFile);
+
     if (coverFile) fd.append("cover", coverFile);
     setUploadState(true);
+
     fetch("/api/upload/local", {
       method: "POST",
       body: fd,
@@ -55,6 +59,7 @@ function UploadLocalSong(props) {
       }
     });
   }
+
   return (
     <div>
       <Row>

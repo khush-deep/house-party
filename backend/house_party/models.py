@@ -15,15 +15,9 @@ class Room(models.Model):
     code = models.CharField(max_length=10, primary_key=True)
     votes_to_skip = models.IntegerField()
     current_votes = models.IntegerField()
-    current_song = models.ForeignKey(Song, on_delete=models.PROTECT, null=True)
+    songs = models.ManyToManyField(Song)
+    current_song = models.IntegerField(null=True)
     song_start_time = models.DateTimeField()
 
     def __str__(self) -> str:
         return self.code
-
-class Playlist(models.Model):
-    room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    song = models.ForeignKey(Song, on_delete=models.CASCADE)
-
-    def __str__(self) -> str:
-        return self.room.__str__() + ":" + self.song.__str__()

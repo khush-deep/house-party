@@ -11,125 +11,138 @@ const defaultCoverUrl = "https://s3.jp-tok.cloud-object-storage.appdomain.cloud/
 
 function Room(props) {
   let history = useHistory();
-  let [modal, setModal] = useState(false);
   let [code, setCode] = useState(props.match.params.code);
   let [roomName, setRoomName] = useState(props.location.name || "");
   let [votesToSkip, setVotesToSkip] = useState(1);
   let [currentVotes, setCurrentVotes] = useState(0);
+
+  let [songId, setSongId] = useState(0);
   let [coverUrl, setCoverUrl] = useState(defaultCoverUrl);
   let [songUrl, setSongUrl] = useState("");
   let [songName, setSongName] = useState("No song to play! Add songs to library");
   let [playlist, setPlaylist] = useState([]);
-  let [songId, setSongId] = useState(null);
+
   let [startTime, setStartTime] = useState("");
   let [elapsedTime, setElapsedTime] = useState(0);
   let [songDuration, setSongDuration] = useState(0);
+  let [songEnded, setSongEnded] = useState(true);
+
   let [nextSongName, setNextSong] = useState("next-song");
   let [voteCasted, setVoteCasted] = useState(false);
-  let [songEnded, setSongEnded] = useState(false);
-  const hiddenAudioElement = useRef(null);
+  let [changingSong, setChangingSong] = useState(true);
+  let [skipHover, setSkipHover] = useState(false);
+  let [modal, setModal] = useState(false);
 
-  function formattedTime(timeInSec) {
-    return new Date(timeInSec * 1000).toISOString().substr(15, 4);
-  }
+  const hiddenAudioElement = useRef(null);
+  const formattedTime = (timeInSec) => new Date(timeInSec * 1000).toISOString().substr(15, 4);
 
   function getSongFromPlaylist() {
-    for (const song of playlist) {
-      if (song.id === songId) {
-        return song;
-      }
-    }
+    return playlist.filter(song => {
+      return song.id === songId;
+    })[0]
   }
+
   function getNextSongFromPlaylist() {
     const n = playlist.length;
     for (let i = 0; i < n; i++) {
-      if (playlist[i].id === songId) {
+      if (playlist[i].id === songId)
         return playlist[(i + 1) % n];
-      }
     }
   }
 
-  const handleSongEnd = event => {
-    songEnded = true;
-    try {
-      hiddenAudioElement.current.pause().catch(() => console.log());
-    } catch (error) {
-    }
-  };
-
-  function toggle() {
-    setModal(!modal);
-  }
+  const toggle = () => setModal(!modal);
 
   function updateRoom() {
+    setElapsedTime(hiddenAudioElement.current?.currentTime || 0);
+    setSongDuration(hiddenAudioElement.current?.duration || 0);
+  }
+  useEffect(() => {
     const tempCurrentTime = new Date() - new Date(startTime);
-    if (Math.abs(tempCurrentTime - hiddenAudioElement.current.currentTime*1000) > 500) {
-      if (tempCurrentTime/1000 < hiddenAudioElement.current.duration)
+    if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 500) {
+      if (tempCurrentTime/1000 < hiddenAudioElement.current?.duration)
         hiddenAudioElement.current.currentTime = tempCurrentTime / 1000;
     }
-    setElapsedTime(hiddenAudioElement.current.currentTime || 0);
-    setSongDuration(hiddenAudioElement.current.duration || 0);
-    if (currentVotes >= votesToSkip || Math.abs(tempCurrentTime/1000 - hiddenAudioElement.current.duration) < 2) {
+    if (!changingSong && (currentVotes >= votesToSkip || Math.abs(tempCurrentTime/1000 - hiddenAudioElement.current?.duration) < 1.5)) {
+      let song_start_time = new Date();
+      song_start_time.setSeconds(song_start_time.getSeconds() + 2);
       let data = {
         "change_song": true,
-        "current_song": getNextSongFromPlaylist().id
+        "current_song": getNextSongFromPlaylist().id,
+        "song_start_time": new Date(song_start_time),
       }
       console.log(data);
+      setChangingSong(true);
+      setTimeout(() => {
+        setSongEnded(true);
+        setSongUrl("");
+      }, 1000);
       fetch("/api/update-room/" + code, {
         method: "POST",
         body: JSON.stringify(data),
       });
     }
-    else if (tempCurrentTime/1000 > hiddenAudioElement.current.duration) {
+    else if (!changingSong && tempCurrentTime/1000 > hiddenAudioElement.current.duration) {
       let data = {
         "change_song": true,
-        "current_song": getSongFromPlaylist().id
+        "current_song": getSongFromPlaylist().id,
+        "song_start_time": new Date(new Date() - elapsedTime*1000),
       }
+      console.log(data);
+      setChangingSong(true);
       fetch("/api/update-room/" + code, {
         method: "POST",
         body: JSON.stringify(data),
       });
     }
-  }
+  }, [currentVotes, elapsedTime])
 
-  function getRoomInfo() {
-    fetch("/api/get-room-info/" + code)
+  useEffect(() => {
+    if (songEnded) hiddenAudioElement.current?.pause()?.catch(e => console.log());
+    else hiddenAudioElement.current?.play()?.catch(e => console.log());
+  });
+
+  useEffect(() => {
+    let song = getSongFromPlaylist();
+    let nextSong = getNextSongFromPlaylist();
+    if (!!song) {
+      setChangingSong(false);
+      setSongUrl(song.song_url);
+      setCoverUrl(song.cover_art_url);
+      setSongName(song.title + " - " + song.artist);
+      setNextSong(nextSong.title + " - " + nextSong.artist);
+    }
+  }, [playlist, songId, startTime])
+
+  useEffect(() => {
+    setVoteCasted(false);
+    setSongEnded(false);
+  }, [songId, startTime])
+
+
+  function getRoomInfo(controller) {
+    const signal = controller.signal;
+    fetch("/api/get-room-info/" + code, {signal})
       .then(res => {
         if (res.status === 200) {
           res.json()
             .then(res => {
-              setCurrentVotes(parseInt(res.current_votes));
-              currentVotes = parseInt(res.current_votes);
-              if (startTime !== res.song_start_time) {
-                setVoteCasted(false);
-                songEnded = false;
-              }
-              startTime = res.song_start_time;
-              songId = parseInt(res.current_song);
-              playlist = res.playlist;
-              let song = getSongFromPlaylist();
-              let nextSong = getNextSongFromPlaylist();
-              if (!!song) {
-                setSongUrl(song.song_url);
-                setCoverUrl(song.cover_art_url);
-                setSongName(song.title + " - " + song.artist);
-                setNextSong(nextSong.title + " - " + nextSong.artist);
-              }
+              setStartTime(res.song_start_time);
+              setSongId(res.current_song);
+              setPlaylist(res.playlist);
+              setCurrentVotes(res.current_votes);
             });
-          if (!songEnded) {
-            try {
-              hiddenAudioElement.current.play().catch(() => console.log());
-            } catch (error) {
-            }
-          }
-          hiddenAudioElement.current.muted = false;
+            if (hiddenAudioElement.current)
+              hiddenAudioElement.current.muted = false;
         }
-      });
+      })
+      .catch(e => console.log());
   }
 
 
   useEffect(() => {
+    const controller = new AbortController();
     let [intervalId1, intervalId2] = [0, 0];
+  
     fetch("/api/get-room-info/" + code)
       .then(res => {
         if (res.status !== 200) {
@@ -139,27 +152,16 @@ function Room(props) {
         else {
           res.json()
             .then(res => {
+              setCode(res.code);
               setRoomName(res.name);
-              setVotesToSkip(parseInt(res.votes_to_skip));
-              votesToSkip = parseInt(res.votes_to_skip);
-              setCurrentVotes(parseInt(res.current_votes));
-              currentVotes = parseInt(res.current_votes);
-              startTime = res.song_start_time;
-              songId = parseInt(res.current_song);
-              playlist = res.playlist;
-              let song = getSongFromPlaylist();
-              let nextSong = getNextSongFromPlaylist();
-              if (!!song) {
-                setSongUrl(song.song_url);
-                setCoverUrl(song.cover_art_url);
-                setSongName(song.title + " - " + song.artist);
-                setNextSong(nextSong.title + " - " + nextSong.artist);
-              }
-
+              setVotesToSkip(res.votes_to_skip);
+              setCurrentVotes(res.current_votes);
+              setStartTime(res.song_start_time)
+              setSongId(res.current_song);
+              setPlaylist(res.playlist);
+              setSongEnded(false);
             });
-          hiddenAudioElement.current.play().catch(() => console.log());
-          hiddenAudioElement.current.muted = false;
-          intervalId1 = setInterval(getRoomInfo, 1500);
+          intervalId1 = setInterval(() => getRoomInfo(controller), 2500);
           intervalId2 = setInterval(updateRoom, 1000);
         }
       });
@@ -168,6 +170,7 @@ function Room(props) {
       clearInterval(intervalId2);
     };
   }, []);
+
 
   function handleSkip() {
     setVoteCasted(true);
@@ -192,7 +195,7 @@ function Room(props) {
           <div className="song_detail">
             {songName}
           </div>
-          <audio ref={hiddenAudioElement} onEnded={handleSongEnd} src={songUrl}></audio>
+          <audio ref={hiddenAudioElement} onEnded={event => setSongEnded(true)} src={songUrl}></audio>
           <div className="playback_bar">
             <div className="progress_bar">
               <div className="playback_time">
@@ -206,9 +209,10 @@ function Room(props) {
               <progress max={songDuration} value={elapsedTime}></progress>
             </div>
             <div className="skip">
-              <Button disabled={voteCasted} onClick={handleSkip} color="success">
+              <Button disabled={voteCasted} onMouseOver={e => setSkipHover(true)} onMouseOut={e => setSkipHover(false)} onClick={handleSkip} color="success">
                 <MdSkipNext />
-                {currentVotes}/{votesToSkip}
+                { !skipHover && currentVotes +"/"+ votesToSkip }
+                { skipHover && "Vote" }
               </Button>
               <div className="tooltip">
                 Next: {nextSongName}
@@ -222,7 +226,7 @@ function Room(props) {
         )}
       <br />
       <div className="back_upload">
-        <Button className="back" onClick={() => history.goBack()} color="danger"> <BiArrowBack /> Back</Button>
+        <Button className="back" onClick={() => history.push("/join")} color="danger"> <BiArrowBack /> Back</Button>
         <Button className="upload" onClick={toggle} color="primary"> <FiUpload /> Upload Song</Button>
       </div>
 
@@ -231,7 +235,7 @@ function Room(props) {
           Upload Song
         </ModalHeader>
         <ModalBody>
-          <UploadLocalSong toggle={toggle} />
+          <UploadLocalSong code={code} toggle={toggle} />
         </ModalBody>
       </Modal>
     </div>

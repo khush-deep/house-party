@@ -2,13 +2,13 @@ import json
 import logging
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 
 from django.db.models import F
 from django.http.response import JsonResponse
 
-from .models import Playlist, Room, Song
+from .models import Room, Song
 from .utils.cloud_storage_helper import get_item_url, upload_to_bucket
 from .utils.serializers import custom_serializer
 
@@ -21,20 +21,13 @@ def get_rooms(request):
 
 
 def get_room_info(request, code):
-    playlists = Playlist.objects.all()
-    playlist = [song for song in playlists if song.room.code == code]
-    if playlist:
-        room = [playlist[0].room]
-    else:
-        room = Room.objects.filter(code=code)
+    room = Room.objects.filter(code=code).prefetch_related("songs").first()
     if not room:
         res = {"error": "Room not found!"}
         return JsonResponse(res, status=HTTPStatus.NOT_FOUND)
 
-    for i in range(len(playlist)):
-        playlist[i] = playlist[i].song
-    res = custom_serializer(room, primary_key="code")[0]
-    res["playlist"] = custom_serializer(playlist)
+    res = custom_serializer([room], primary_key="code")[0]
+    res["playlist"] = custom_serializer(room.songs.all())
     return JsonResponse(res)
 
 
@@ -61,17 +54,12 @@ def create_room(request):
         code=room_code,
         votes_to_skip=int(data.get("votes_to_skip", 1)),
         current_votes=0,
-        current_song=current_song,
-        song_start_time=datetime.now()
+        current_song=current_song.id if current_song else None,
+        song_start_time=datetime.fromtimestamp(0, tz=timezone.utc)
     )
     room.save()
-    playlist = []
     for song in songs:
-        playlist.append(Playlist(
-            room=room,
-            song=song
-        ))
-    Playlist.objects.bulk_create(playlist)
+        room.songs.add(song)
 
     res = custom_serializer([room], primary_key="code")[0]
     res["playlist"] = custom_serializer(songs)
@@ -84,22 +72,29 @@ def update_room(request, code):
     fields = {
         "current_votes": F("current_votes") + added_votes
     }
+
     if data.get("change_song"):
         fields["current_song"] = data["current_song"]
-        fields["song_start_time"] = datetime.now()
+        fields["song_start_time"] = data.get("song_start_time", datetime.now(tz=timezone.utc))
         fields["current_votes"] = 0
+
     Room.objects.filter(code=code).update(**fields)
-    return get_room_info(request, code)
+
+    res = {"message": "Room updated"}
+    return JsonResponse(res)
 
 
 def upload_local_song(request):
     data = request.POST
     files = request.FILES
     song_file = files.get("song")
+
     if not song_file or not data.get("title"):
         res = {"error": "Insufficient data"}
         return JsonResponse(res, HTTPStatus.BAD_REQUEST)
+
     song_filename = data["title"] + " - " + data.get("artist", "") + ".mp3"
+
     success, message = upload_to_bucket(song_filename, song_file)
     if not success:
         logging.error(message)
@@ -107,6 +102,7 @@ def upload_local_song(request):
         return JsonResponse(res, status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
     cover_file = files.get("cover")
+
     if cover_file:
         cover_filename = data["title"] + " - " + data.get("artist", "") + ".jpg"
         success, message = upload_to_bucket(cover_filename, cover_file)
@@ -125,16 +121,17 @@ def upload_local_song(request):
     )
     song.save()
 
-    def append_song_to_playlists(song):
-        rooms = Room.objects.all()
-        playlists = []
-        for room in rooms:
-            playlists.append(Playlist(
-                room=room,
-                song=song
-            ))
-        Playlist.objects.bulk_create(playlists)
-    append_song_to_playlists(song)
+    code = data["code"]
+
+    room = Room.objects.filter(code=code).first()
+    if not room:
+        res = {"error": "Room not found!"}
+        return JsonResponse(res, status=HTTPStatus.NOT_FOUND)
+        
+    room.songs.add(song)
+    if not room.current_song:
+        room.current_song = song.id
+        room.save()
 
     res = {"message": "Song uploaded"}
     return JsonResponse(res, status=HTTPStatus.CREATED)

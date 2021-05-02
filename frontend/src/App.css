@@ -1,8 +1,6 @@
 .App {
   background-color: #762be2;
   background-image: radial-gradient( rgba(255,0,255,.3), rgba(0,0,255,.05) );
-  /* background-image: radial-gradient( rgba(255,0,255,.20), rgba(0,0,255,.05), rgba(255,0,255,.20)); */
-  /* background-image: linear-gradient(to right, rgba(255,0,255,.5) , rgba(0,0,255,0.1)); */
   color: white;
   overflow: auto;
 }

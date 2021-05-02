@@ -60,4 +60,6 @@ def initialize_bucket(COS_BUCKET_NAME):
             return
     print("Bucket initialized!")
 
-initialize_bucket(COS_BUCKET_NAME)
+from concurrent.futures import ThreadPoolExecutor
+executer = ThreadPoolExecutor(max_workers=1)
+executer.submit(initialize_bucket, COS_BUCKET_NAME)

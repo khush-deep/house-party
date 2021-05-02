@@ -14,8 +14,12 @@
     justify-content: center;
 }
 
+.cover {
+    border-radius: 12px;
+}
 .cover img {
-    width: 250px;
+    width: 280px;
+    border-radius: inherit;
 }
 .song_detail {
     line-height: 2.5;
@@ -41,7 +45,7 @@
     font-size: 13px;
     text-align: center;
     border-radius: 6px;
-    padding: 5px 0;
+    padding: 5px 4px;
 
     /* Position the tooltip */
     position: absolute;
@@ -51,7 +55,8 @@
 }
 .skip:hover .tooltip {
     visibility: visible;
-  }
+    opacity: 1;
+}
 .progress_bar {
     display: flex;
     flex-direction: column;

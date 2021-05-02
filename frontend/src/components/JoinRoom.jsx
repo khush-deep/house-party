@@ -26,11 +26,15 @@ function JoinRoom() {
   const [roomsData, setRoomsData] = useState(null);
 
   useEffect(() => {
-    fetch("/api/get-rooms")
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    fetch("/api/get-rooms", {signal})
       .then(res => res.json())
-      .then(data => {
-        setRoomsData(data);
-      });
+      .then(data => setRoomsData(data))
+      .catch(e => console.log());
+
+    return () => controller.abort();
   }, []);
 
   return (
@@ -42,7 +46,7 @@ function JoinRoom() {
         return roomsListItem(room);
       })}<br />
       <div>
-        <Button className="back" onClick={() => history.goBack()} color="danger"> <BiArrowBack /> Back</Button>
+        <Button className="back" onClick={() => history.push("/")} color="danger"> <BiArrowBack /> Back</Button>
       </div>
     </div>
   );
