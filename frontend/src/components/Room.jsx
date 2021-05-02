@@ -121,6 +121,7 @@ function Room(props) {
 
   function getRoomInfo(controller) {
     const signal = controller.signal;
+    console.log("polling started");
     fetch("/api/get-room-info/" + code, {signal})
       .then(res => {
         if (res.status === 200) {
@@ -133,6 +134,7 @@ function Room(props) {
             });
             if (hiddenAudioElement.current)
               hiddenAudioElement.current.muted = false;
+            console.log("polling finished");
         }
       })
       .catch(e => console.log());

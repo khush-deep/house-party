@@ -4,6 +4,7 @@ import random
 import string
 from datetime import datetime, timezone
 from http import HTTPStatus
+import time
 
 from django.db.models import F
 from django.http.response import JsonResponse
@@ -16,11 +17,14 @@ from .utils.serializers import custom_serializer
 
 
 def get_rooms(request):
+    start_time = time.time()
     rooms = custom_serializer(Room.objects.all(), fields=("name", "code"), primary_key="code")
+    print("Time for get_rooms: ", time.time() - start_time)
     return JsonResponse(rooms, safe=False)
 
 
 def get_room_info(request, code):
+    start_time = time.time()
     room = Room.objects.filter(code=code).prefetch_related("songs").first()
     if not room:
         res = {"error": "Room not found!"}
@@ -28,6 +32,7 @@ def get_room_info(request, code):
 
     res = custom_serializer([room], primary_key="code")[0]
     res["playlist"] = custom_serializer(room.songs.all())
+    print("Time for get_room_info: ", time.time() - start_time)
     return JsonResponse(res)
 
 

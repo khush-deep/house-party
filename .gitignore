@@ -1,7 +1,10 @@
+# django
 venv
 .env
 __pycache__
 db.sqlite3
+migrations/
+staticfiles/
 
 # REACT
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
