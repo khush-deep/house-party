@@ -31,6 +31,7 @@ function Room(props) {
   let [voteCasted, setVoteCasted] = useState(false);
   let [changingSong, setChangingSong] = useState(true);
   let [skipHover, setSkipHover] = useState(false);
+  let [trigger, setTrigger] = useState(null);
   let [modal, setModal] = useState(false);
 
   const hiddenAudioElement = useRef(null);
@@ -51,12 +52,13 @@ function Room(props) {
   }
 
   const toggle = () => setModal(!modal);
-
-  function updateRoom() {
+  
+  useEffect(() => {
     setElapsedTime(hiddenAudioElement.current?.currentTime || 0);
     setSongDuration(hiddenAudioElement.current?.duration || 0);
-  }
-  useEffect(() => {
+    if (songEnded) hiddenAudioElement.current?.pause()?.catch(e => console.log());
+    else hiddenAudioElement.current?.play()?.catch(e => console.log());
+    
     const tempCurrentTime = new Date() - new Date(startTime);
     if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 500) {
       if (tempCurrentTime/1000 < hiddenAudioElement.current?.duration)
@@ -75,7 +77,7 @@ function Room(props) {
       setTimeout(() => {
         setSongEnded(true);
         setSongUrl("");
-      }, 1000);
+      }, 400);
       fetch("/api/update-room/" + code, {
         method: "POST",
         body: JSON.stringify(data),
@@ -94,12 +96,8 @@ function Room(props) {
         body: JSON.stringify(data),
       });
     }
-  }, [currentVotes, elapsedTime])
+  }, [trigger])
 
-  useEffect(() => {
-    if (songEnded) hiddenAudioElement.current?.pause()?.catch(e => console.log());
-    else hiddenAudioElement.current?.play()?.catch(e => console.log());
-  });
 
   useEffect(() => {
     let song = getSongFromPlaylist();
@@ -115,13 +113,13 @@ function Room(props) {
 
   useEffect(() => {
     setVoteCasted(false);
-    setSongEnded(false);
+    setTimeout(() => setSongEnded(false), 100);
   }, [songId, startTime])
 
 
   function getRoomInfo(controller) {
     const signal = controller.signal;
-    console.log("polling started");
+    console.log("polling started -", new Date().getSeconds());
     fetch("/api/get-room-info/" + code, {signal})
       .then(res => {
         if (res.status === 200) {
@@ -134,7 +132,7 @@ function Room(props) {
             });
             if (hiddenAudioElement.current)
               hiddenAudioElement.current.muted = false;
-            console.log("polling finished");
+            console.log("polling finished -", new Date().getSeconds());
         }
       })
       .catch(e => console.log());
@@ -164,7 +162,7 @@ function Room(props) {
               setSongEnded(false);
             });
           intervalId1 = setInterval(() => getRoomInfo(controller), 2500);
-          intervalId2 = setInterval(updateRoom, 1000);
+          intervalId2 = setInterval(() => setTrigger(Date.now()), 1000);
         }
       });
     return () => {
