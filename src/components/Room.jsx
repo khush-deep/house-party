@@ -26,7 +26,7 @@ function Room(props) {
   let [startTime, setStartTime] = useState("");
   let [elapsedTime, setElapsedTime] = useState(0);
   let [songDuration, setSongDuration] = useState(0);
-  let [songEnded, setSongEnded] = useState(true);
+  let [songEnded, setSongEnded] = useState(false);
 
   let [nextSongName, setNextSong] = useState("next-song");
   let [voteCasted, setVoteCasted] = useState(false);
@@ -61,9 +61,11 @@ function Room(props) {
     else hiddenAudioElement.current?.play()?.catch(e => console.log());
     console.log("timeDelta:", timeDeltaMS);
     const tempCurrentTime = new Date() - new Date(startTime) - timeDeltaMS;
-    if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 500) {
-      if (tempCurrentTime/1000 < hiddenAudioElement.current?.duration)
+    if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 150) {
+      if (0 < tempCurrentTime && tempCurrentTime/1000 < hiddenAudioElement.current?.duration)
+      {
         hiddenAudioElement.current.currentTime = tempCurrentTime / 1000;
+      }
     }
     if (!changingSong && (currentVotes >= votesToSkip || Math.abs(tempCurrentTime/1000 - hiddenAudioElement.current?.duration) < 1.5)) {
       let song_start_time = new Date(new Date() - timeDeltaMS);
@@ -84,7 +86,7 @@ function Room(props) {
         body: JSON.stringify(data),
       });
     }
-    else if (!changingSong && tempCurrentTime/1000 > hiddenAudioElement.current.duration) {
+    else if (!changingSong && (tempCurrentTime/1000 > hiddenAudioElement.current.duration) || tempCurrentTime < 0) {
       let data = {
         "change_song": true,
         "current_song": getSongFromPlaylist().id,
