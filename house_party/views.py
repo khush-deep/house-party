@@ -32,6 +32,7 @@ def get_room_info(request, code):
 
     res = custom_serializer([room], primary_key="code")[0]
     res["playlist"] = custom_serializer(room.songs.all())
+    res["time"] = datetime.now(tz=timezone.utc)
     print("Time for get_room_info: ", time.time() - start_time)
     return JsonResponse(res)
 

@@ -22,6 +22,7 @@ function Room(props) {
   let [songName, setSongName] = useState("No song to play! Add songs to library");
   let [playlist, setPlaylist] = useState([]);
 
+  let [timeDeltaMS, setTimeDeltaMS] = useState(0);
   let [startTime, setStartTime] = useState("");
   let [elapsedTime, setElapsedTime] = useState(0);
   let [songDuration, setSongDuration] = useState(0);
@@ -58,14 +59,14 @@ function Room(props) {
     setSongDuration(hiddenAudioElement.current?.duration || 0);
     if (songEnded) hiddenAudioElement.current?.pause()?.catch(e => console.log());
     else hiddenAudioElement.current?.play()?.catch(e => console.log());
-    
-    const tempCurrentTime = new Date() - new Date(startTime);
+    console.log("timeDelta:", timeDeltaMS);
+    const tempCurrentTime = new Date() - new Date(startTime) - timeDeltaMS;
     if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 500) {
       if (tempCurrentTime/1000 < hiddenAudioElement.current?.duration)
         hiddenAudioElement.current.currentTime = tempCurrentTime / 1000;
     }
     if (!changingSong && (currentVotes >= votesToSkip || Math.abs(tempCurrentTime/1000 - hiddenAudioElement.current?.duration) < 1.5)) {
-      let song_start_time = new Date();
+      let song_start_time = new Date(new Date() - timeDeltaMS);
       song_start_time.setSeconds(song_start_time.getSeconds() + 2);
       let data = {
         "change_song": true,
@@ -87,7 +88,7 @@ function Room(props) {
       let data = {
         "change_song": true,
         "current_song": getSongFromPlaylist().id,
-        "song_start_time": new Date(new Date() - elapsedTime*1000),
+        "song_start_time": new Date(new Date() - elapsedTime*1000 - timeDeltaMS),
       }
       console.log(data);
       setChangingSong(true);
@@ -117,14 +118,15 @@ function Room(props) {
   }, [songId, startTime])
 
 
-  function getRoomInfo(controller) {
+  async function getRoomInfo(controller) {
     const signal = controller.signal;
-    console.log("polling started -", new Date().getSeconds());
-    fetch("/api/get-room-info/" + code, {signal})
+    const start = new Date();
+    await fetch("/api/get-room-info/" + code, {signal})
       .then(res => {
         if (res.status === 200) {
           res.json()
             .then(res => {
+              setTimeDeltaMS(new Date() - new Date(res.time));
               setStartTime(res.song_start_time);
               setSongId(res.current_song);
               setPlaylist(res.playlist);
@@ -132,7 +134,7 @@ function Room(props) {
             });
             if (hiddenAudioElement.current)
               hiddenAudioElement.current.muted = false;
-            console.log("polling finished -", new Date().getSeconds());
+            console.log("polling finished -", (new Date() - start)/1000);
         }
       })
       .catch(e => console.log());
@@ -153,6 +155,7 @@ function Room(props) {
           res.json()
             .then(res => {
               setCode(res.code);
+              setTimeDeltaMS(new Date() - new Date(res.time));
               setRoomName(res.name);
               setVotesToSkip(res.votes_to_skip);
               setCurrentVotes(res.current_votes);
