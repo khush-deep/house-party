@@ -60,11 +60,14 @@ function Room(props) {
     if (songEnded) hiddenAudioElement.current?.pause()?.catch(e => console.log());
     else hiddenAudioElement.current?.play()?.catch(e => console.log());
     console.log("timeDelta:", timeDeltaMS);
+    console.log("tolerance:", tempCurrentTime - hiddenAudioElement.current?.currentTime*1000);
+
     const tempCurrentTime = new Date() - new Date(startTime) - timeDeltaMS;
-    if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 150) {
+    if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 250) {
       if (0 < tempCurrentTime && tempCurrentTime/1000 < hiddenAudioElement.current?.duration)
       {
-        hiddenAudioElement.current.currentTime = tempCurrentTime / 1000;
+        console.log("changing", tempCurrentTime/1000, hiddenAudioElement.current?.duration);
+        hiddenAudioElement.current.currentTime = (tempCurrentTime+50) / 1000;
       }
     }
     if (!changingSong && (currentVotes >= votesToSkip || Math.abs(tempCurrentTime/1000 - hiddenAudioElement.current?.duration) < 1.5)) {
@@ -166,7 +169,7 @@ function Room(props) {
               setPlaylist(res.playlist);
               setSongEnded(false);
             });
-          intervalId1 = setInterval(() => getRoomInfo(controller), 2500);
+          intervalId1 = setInterval(() => getRoomInfo(controller), 2000);
           intervalId2 = setInterval(() => setTrigger(Date.now()), 1000);
         }
       });
