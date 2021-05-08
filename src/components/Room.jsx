@@ -59,10 +59,10 @@ function Room(props) {
     setSongDuration(hiddenAudioElement.current?.duration || 0);
     if (songEnded) hiddenAudioElement.current?.pause()?.catch(e => console.log());
     else hiddenAudioElement.current?.play()?.catch(e => console.log());
+    
     console.log("timeDelta:", timeDeltaMS);
-    console.log("tolerance:", tempCurrentTime - hiddenAudioElement.current?.currentTime*1000);
-
     const tempCurrentTime = new Date() - new Date(startTime) - timeDeltaMS;
+    console.log("tolerance:", tempCurrentTime - hiddenAudioElement.current?.currentTime*1000);
     if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 250) {
       if (0 < tempCurrentTime && tempCurrentTime/1000 < hiddenAudioElement.current?.duration)
       {
