@@ -63,11 +63,11 @@ function Room(props) {
     console.log("timeDelta:", timeDeltaMS);
     const tempCurrentTime = new Date() - new Date(startTime) - timeDeltaMS;
     console.log("tolerance:", tempCurrentTime - hiddenAudioElement.current?.currentTime*1000);
-    if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 250) {
+    if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 200) {
       if (0 < tempCurrentTime && tempCurrentTime/1000 < hiddenAudioElement.current?.duration)
       {
         console.log("changing", tempCurrentTime/1000, hiddenAudioElement.current?.duration);
-        hiddenAudioElement.current.currentTime = (tempCurrentTime+50) / 1000;
+        hiddenAudioElement.current.currentTime = (tempCurrentTime+100) / 1000;
       }
     }
     if (!changingSong && (currentVotes >= votesToSkip || Math.abs(tempCurrentTime/1000 - hiddenAudioElement.current?.duration) < 1.5)) {
