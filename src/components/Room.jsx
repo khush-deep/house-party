@@ -66,8 +66,8 @@ function Room(props) {
     if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 200) {
       if (0 < tempCurrentTime && tempCurrentTime/1000 < hiddenAudioElement.current?.duration)
       {
-        console.log("changing", tempCurrentTime/1000, hiddenAudioElement.current?.duration);
-        hiddenAudioElement.current.currentTime = (tempCurrentTime+100) / 1000;
+        console.log("changing", tempCurrentTime/1000, hiddenAudioElement.current?.currentTime);
+        hiddenAudioElement.current.currentTime = (tempCurrentTime) / 1000;
       }
     }
     if (!changingSong && (currentVotes >= votesToSkip || Math.abs(tempCurrentTime/1000 - hiddenAudioElement.current?.duration) < 1.5)) {
