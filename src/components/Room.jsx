@@ -57,22 +57,26 @@ function Room(props) {
   useEffect(() => {
     setElapsedTime(hiddenAudioElement.current?.currentTime || 0);
     setSongDuration(hiddenAudioElement.current?.duration || 0);
+    
+    const tempCurrentTime = new Date() - new Date(startTime) - timeDeltaMS;
+  
     if (songEnded) hiddenAudioElement.current?.pause()?.catch(e => console.log());
     else hiddenAudioElement.current?.play()?.catch(e => console.log());
-    
+
     console.log("timeDelta:", timeDeltaMS);
-    const tempCurrentTime = new Date() - new Date(startTime) - timeDeltaMS;
     console.log("tolerance:", tempCurrentTime - hiddenAudioElement.current?.currentTime*1000);
-    if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 200) {
+
+    if (Math.abs(tempCurrentTime - hiddenAudioElement.current?.currentTime*1000) > 300) {
       if (0 < tempCurrentTime && tempCurrentTime/1000 < hiddenAudioElement.current?.duration)
       {
         console.log("changing", tempCurrentTime/1000, hiddenAudioElement.current?.currentTime);
         hiddenAudioElement.current.currentTime = (tempCurrentTime) / 1000;
       }
     }
-    if (!changingSong && (currentVotes >= votesToSkip || Math.abs(tempCurrentTime/1000 - hiddenAudioElement.current?.duration) < 1.5)) {
+
+    if (!changingSong && (currentVotes >= votesToSkip || Math.abs(tempCurrentTime/1000 - hiddenAudioElement.current?.duration) < 1.0)) {
       let song_start_time = new Date(new Date() - timeDeltaMS);
-      song_start_time.setSeconds(song_start_time.getSeconds() + 2);
+      song_start_time.setSeconds(song_start_time.getSeconds() + 3);
       let data = {
         "change_song": true,
         "current_song": getNextSongFromPlaylist().id,
@@ -82,18 +86,18 @@ function Room(props) {
       setChangingSong(true);
       setTimeout(() => {
         setSongEnded(true);
-        setSongUrl("");
+        setSongUrl(getNextSongFromPlaylist().song_url);
       }, 400);
       fetch("/api/update-room/" + code, {
         method: "POST",
         body: JSON.stringify(data),
       });
     }
-    else if (!changingSong && (tempCurrentTime/1000 > hiddenAudioElement.current.duration) || tempCurrentTime < 0) {
+    else if (!changingSong && (tempCurrentTime/1000 > hiddenAudioElement.current.duration) || tempCurrentTime/1000 < -2.0) {
       let data = {
         "change_song": true,
         "current_song": getSongFromPlaylist().id,
-        "song_start_time": new Date(new Date() - elapsedTime*1000 - timeDeltaMS),
+        "song_start_time": new Date(new Date() - (hiddenAudioElement.current?.currentTime || 0)*1000 - timeDeltaMS),
       }
       console.log(data);
       setChangingSong(true);
@@ -119,7 +123,7 @@ function Room(props) {
 
   useEffect(() => {
     setVoteCasted(false);
-    setTimeout(() => setSongEnded(false), 100);
+    setTimeout(() => setSongEnded(false), 500);
   }, [songId, startTime])
 
 
