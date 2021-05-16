@@ -61,7 +61,7 @@ function Room(props) {
     const tempCurrentTime = new Date() - new Date(startTime) - timeDeltaMS;
   
     if (songEnded) hiddenAudioElement.current?.pause()?.catch(e => console.log());
-    else hiddenAudioElement.current?.play()?.catch(e => console.log());
+    else if (tempCurrentTime >= 0) hiddenAudioElement.current?.play()?.catch(e => console.log());
 
     console.log("timeDelta:", timeDeltaMS);
     console.log("tolerance:", tempCurrentTime - hiddenAudioElement.current?.currentTime*1000);

@@ -19,6 +19,7 @@
 }
 .cover img {
     width: 280px;
+    height: 280px;
     border-radius: inherit;
 }
 .song_detail {
